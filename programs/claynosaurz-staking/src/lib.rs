@@ -1,0 +1,66 @@
+use anchor_lang::prelude::*;
+
+mod instructions;
+use instructions::*;
+
+mod state;
+mod events;
+mod constant;
+mod errors;
+
+declare_id!("22222222222222222222222222222222222222222222");
+
+#[program]
+pub mod clayno_staking {
+    use super::*;
+
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        instructions::initialize(ctx)
+    }
+
+    pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
+        instructions::staking_action::stake(ctx)
+    }
+
+    pub fn unstake(ctx: Context<StakingAction>) -> Result<()> {
+        instructions::staking_action::unstake(ctx)
+    }
+
+    pub fn claim(ctx: Context<CrankingAction>) -> Result<()> {
+        instructions::cranking_action::claim(ctx)
+    }
+
+    pub fn increase_level(ctx: Context<CrankingAction>) -> Result<()> {
+        instructions::cranking_action::increase_level(ctx)
+    }
+
+    // Admin Instructions
+    pub fn create_class(ctx: Context<CreateClass>) -> Result<()> {
+        instructions::admin::create_class(ctx)
+    }
+
+    pub fn add_experience(ctx: Context<GodMode>, amount: u64) -> Result<()> {
+        instructions::admin::add_experience(ctx, amount)
+    }
+
+    pub fn remove_experience(ctx: Context<GodMode>, amount: u64) -> Result<()> {
+        instructions::admin::remove_experience(ctx, amount)
+    }
+
+    pub fn add_multiplier(ctx: Context<GodMode>, additional_multiplier: u16) -> Result<()> {
+        instructions::admin::add_multiplier(ctx, additional_multiplier)
+    }
+
+    pub fn remove_multiplier(ctx: Context<GodMode>, multiplier: u16) -> Result<()> {
+        instructions::admin::remove_multiplier(ctx, multiplier)
+    }
+
+    pub fn add_ephemeral_multiplier(ctx: Context<GodMode>, multiplier: u8, expiry_time: i64) -> Result<()> {
+        instructions::admin::add_ephemeral_multiplier(ctx, multiplier, expiry_time)
+    }
+
+    pub fn reclaim_rent(ctx: Context<GodMode>) -> Result<()> {
+        instructions::admin::reclaim_rent(ctx)
+    }
+
+}
