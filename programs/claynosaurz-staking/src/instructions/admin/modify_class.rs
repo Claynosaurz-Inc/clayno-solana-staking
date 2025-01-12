@@ -10,12 +10,15 @@ use crate::constant::{CLASS_PDA_SEED, AUTHORITY_SEED, ADMIN_ADDRESS};
 use crate::events::StakingAccountUpdated;
 
 /// Creates a new class PDA and initializes it with the necessary data.
-pub fn create_class(ctx: Context<CreateClass>, multiplier: u16) -> Result<()> {
-    // Check if multiplier is greater than 0
-    require_gte!(multiplier, 1, StakingError::InvalidMultiplier);
+pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16) -> Result<()> {
+    let class_pda = &mut ctx.accounts.class_pda;
+    let previous_multiplier = class_pda.multiplier;
 
+    require_neq!(multiplier, previous_multiplier, StakingError::InvalidMultiplier);
+    require_gte!(multiplier, 1, StakingError::InvalidMultiplier);
+    
     // Populate the Class PDA with the multiplier
-    ctx.accounts.class_pda.set_inner(Class { multiplier });
+    class_pda.set_inner(Class { multiplier });
 
     // Check if the asset is staked and update staking data if necessary
     let record = TokenRecord::safe_deserialize(&mut ctx.accounts.token_mint_record.to_account_info().data.borrow_mut()).unwrap();
@@ -38,10 +41,17 @@ pub fn create_class(ctx: Context<CreateClass>, multiplier: u16) -> Result<()> {
             require_eq!(token_account_data.amount, 1, StakingError::WrongAmount);
 
             // Update staking_data
-            staking_account_data.update_points(Clock::get()?.unix_timestamp, &staking_account)?;
-            staking_account_data.current_multiplier = staking_account_data.current_multiplier
-                .checked_add(multiplier - 1u16)
-                .ok_or(StakingError::Overflow)?;
+            let account_info = staking_account.to_account_info();
+            staking_account_data.update_points(Clock::get()?.unix_timestamp, &account_info)?;
+            if multiplier > previous_multiplier {
+                staking_account_data.current_multiplier = staking_account_data.current_multiplier
+                    .checked_add(multiplier - previous_multiplier)
+                    .ok_or(StakingError::Overflow)?;
+            } else {
+                staking_account_data.current_multiplier = staking_account_data.current_multiplier
+                    .checked_sub(previous_multiplier - multiplier)
+                    .ok_or(StakingError::Overflow)?;
+            }
 
             // Serialize staking_data back to the account
             staking_account_data.try_serialize(&mut &mut staking_account.try_borrow_mut_data()?[..])?;
@@ -63,13 +73,11 @@ pub fn create_class(ctx: Context<CreateClass>, multiplier: u16) -> Result<()> {
 }
 
 #[derive(Accounts)]
-pub struct CreateClass<'info> {
+pub struct ModifyClass<'info> {
     #[account(mut, address = ADMIN_ADDRESS.parse::<Pubkey>().unwrap())]
     pub admin: Signer<'info>,
     #[account(
-        init,
-        payer = admin,
-        space = Class::INIT_SPACE,
+        mut,
         seeds = [CLASS_PDA_SEED.as_bytes(), token_mint.key().as_ref()], 
         bump
     )]

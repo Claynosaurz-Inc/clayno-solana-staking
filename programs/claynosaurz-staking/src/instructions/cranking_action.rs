@@ -12,7 +12,8 @@ pub fn increase_level(ctx: Context<CrankingAction>) -> Result<()> {
     require_neq!(staking_account.last_claimed, 0, StakingError::NeverStaked);
 
     // Update current points
-    staking_account.update_points(Clock::get()?.unix_timestamp)?;
+    let account_info = staking_account.to_account_info();
+    staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
 
     // Check if the user has enough points
     require!(staking_account.has_enough_points()?, StakingError::NotEnoughPoints);
@@ -31,7 +32,8 @@ pub fn claim(ctx: Context<CrankingAction>) -> Result<()> {
     require_neq!(staking_account.last_claimed, 0, StakingError::NeverStaked);
 
     // Update the points
-    staking_account.update_points(Clock::get()?.unix_timestamp)?;
+    let account_info = staking_account.to_account_info();
+    staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
 
     Ok(())
 }

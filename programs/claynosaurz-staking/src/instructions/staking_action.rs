@@ -5,10 +5,9 @@ use anchor_spl::token::{Token, TokenAccount, Mint};
 use mpl_token_metadata::instructions::{DelegateStakingV1CpiBuilder, LockV1CpiBuilder, RevokeStakingV1CpiBuilder, UnlockV1CpiBuilder};
 use mpl_token_metadata::accounts::Metadata;
 
-use crate::state::StakingData;
+use crate::state::{StakingData, Class};
 use crate::errors::StakingError;
 use crate::constant::{CLAYNO_COLLECTION_ADDRESS, AUTHORITY_SEED, STAKING_ACCOUNT_SEED, CLASS_PDA_SEED};
-use crate::ID;
 use crate::events::StakingAccountUpdated;
 
 /// Stakes an NFT by delegating it to the global authority PDA.
@@ -18,15 +17,22 @@ pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
 
     // Update last claimed timestamp and points
     if staking_account.last_claimed != 0 {
-        staking_account.update_points(Clock::get()?.unix_timestamp)?;
+        let account_info = staking_account.to_account_info();
+        staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
     } else {
         staking_account.last_claimed = Clock::get()?.unix_timestamp;
     }
 
-    // Adjust multiplier based on class PDA ownership
-    staking_account.current_multiplier = staking_account.current_multiplier
-        .checked_add(if ctx.accounts.class_pda.owner == &ID { 2 } else { 1 })
-        .ok_or(StakingError::Overflow)?;
+    // Adjust multiplier based on class PDA ownership (default to 1 if no class PDA)
+    if let Ok(class) = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..]) {
+        staking_account.current_multiplier = staking_account.current_multiplier
+            .checked_add(class.multiplier)
+            .ok_or(StakingError::Overflow)?;
+    } else {
+        staking_account.current_multiplier = staking_account.current_multiplier
+            .checked_add(1)
+            .ok_or(StakingError::Overflow)?;
+    }
 
     // Deserialize Metadata to verify collection
     let nft_metadata = Metadata::safe_deserialize(&mut ctx.accounts.nft_metadata.to_account_info().data.borrow_mut()).unwrap();
@@ -93,12 +99,19 @@ pub fn unstake(ctx: Context<StakingAction>) -> Result<()> {
     let staking_account = &mut ctx.accounts.staking_account;
 
     // Update points
-    staking_account.update_points(Clock::get()?.unix_timestamp)?;
+    let account_info = staking_account.to_account_info();
+    staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
 
-    // Adjust multiplier based on class PDA ownership
-    staking_account.current_multiplier = staking_account.current_multiplier
-        .checked_sub(if ctx.accounts.class_pda.owner == &ID { 2 } else { 1 })
-        .ok_or(StakingError::Overflow)?;
+    // Adjust multiplier based on class PDA ownership (default to 1 if no class PDA)
+    if let Ok(class) = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..]) {
+        staking_account.current_multiplier = staking_account.current_multiplier
+            .checked_sub(class.multiplier)
+            .ok_or(StakingError::Overflow)?;
+    } else {
+        staking_account.current_multiplier = staking_account.current_multiplier
+            .checked_sub(1)
+            .ok_or(StakingError::Overflow)?;
+    }
 
     // Unlock NFT
     let seeds = &[AUTHORITY_SEED.as_bytes(), &[ctx.bumps.auth]];

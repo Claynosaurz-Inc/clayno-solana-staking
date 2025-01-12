@@ -3,6 +3,16 @@ use anchor_lang::prelude::*;
 use crate::constant::{EXPERIENCE_FOR_SECOND, MAX_LEVEL, LEVEL_25_POINTS};
 use crate::errors::StakingError;
 
+/// Represent a Class of a Claynosaurz
+#[account]
+pub struct Class {
+    pub multiplier: u16,
+}
+
+impl Space for Class {
+    const INIT_SPACE: usize = 8 + 2;
+}
+
 /// Represents a temporary multiplier with an expiry time.
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug)]
 pub struct EphemeralMultiplier {
@@ -53,7 +63,7 @@ impl Space for StakingData {
 
 impl StakingData {
     /// Updates the points based on the current time and active multipliers.
-    pub fn update_points(&mut self, current_time: i64) -> Result<()> {
+    pub fn update_points(&mut self, current_time: i64, staking_account: &AccountInfo) -> Result<()> {
         let mut total_points = 0u64;
         let mut active_multipliers = Vec::with_capacity(self.ephemeral_multiplier.len());
         let mut total_multiplier = self.current_multiplier as u64;
@@ -93,8 +103,15 @@ impl StakingData {
         // Update state
         self.points = self.points.checked_add(total_points).ok_or(StakingError::Overflow)?;
         self.last_claimed = current_time;
+        
+        // Realloc account to new size if needed
+        if self.ephemeral_multiplier.len() > active_multipliers.len() {
+            let new_size = StakingData::INIT_SPACE + active_multipliers.len() * std::mem::size_of::<EphemeralMultiplier>();
+            staking_account.realloc(new_size, true)?;
+        }
+        
         self.ephemeral_multiplier = active_multipliers;
-
+        
         Ok(())
     }
 

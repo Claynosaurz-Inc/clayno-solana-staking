@@ -35,8 +35,12 @@ pub mod clayno_staking {
     }
 
     // Admin Instructions
-    pub fn create_class(ctx: Context<CreateClass>) -> Result<()> {
-        instructions::admin::create_class(ctx)
+    pub fn create_class(ctx: Context<CreateClass>, multiplier: u16) -> Result<()> {
+        instructions::admin::create_class(ctx, multiplier)
+    }
+
+    pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16) -> Result<()> {
+        instructions::admin::modify_class(ctx, multiplier)
     }
 
     pub fn add_experience(ctx: Context<GodMode>, amount: u64) -> Result<()> {
@@ -57,6 +61,10 @@ pub mod clayno_staking {
 
     pub fn add_ephemeral_multiplier(ctx: Context<GodMode>, multiplier: u8, expiry_time: i64) -> Result<()> {
         instructions::admin::add_ephemeral_multiplier(ctx, multiplier, expiry_time)
+    }
+
+    pub fn remove_ephemeral_multiplier(ctx: Context<GodMode>) -> Result<()> {
+        instructions::admin::remove_ephemeral_multiplier(ctx)
     }
 
     pub fn reclaim_rent(ctx: Context<GodMode>) -> Result<()> {

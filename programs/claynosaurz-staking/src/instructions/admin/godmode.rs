@@ -10,7 +10,8 @@ pub fn add_experience(ctx: Context<GodMode>, amount: u64) -> Result<()> {
     let staking_account = &mut ctx.accounts.staking_account;
 
     // Update current points
-    staking_account.update_points(Clock::get()?.unix_timestamp)?;
+    let account_info = staking_account.to_account_info();
+    staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
 
     // Add experience
     staking_account.points = staking_account.points.checked_add(amount).ok_or(StakingError::Overflow)?;
@@ -34,7 +35,8 @@ pub fn add_ephemeral_multiplier(ctx: Context<GodMode>, multiplier: u8, expiry_ti
     let staking_account = &mut ctx.accounts.staking_account;
 
     // Update current points
-    staking_account.update_points(Clock::get()?.unix_timestamp)?;
+    let account_info = staking_account.to_account_info();
+    staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
 
     // Add Ephemeral Multiplier
     staking_account.ephemeral_multiplier.push(EphemeralMultiplier {multiplier, expiry_time});
@@ -69,12 +71,33 @@ pub fn add_ephemeral_multiplier(ctx: Context<GodMode>, multiplier: u8, expiry_ti
     Ok(())
 }
 
+/// Removes all ephemeral multipliers from the staking account.
+pub fn remove_ephemeral_multiplier(ctx: Context<GodMode>) -> Result<()> {
+    let staking_account = &mut ctx.accounts.staking_account;
+
+    // Update current points
+    let account_info = staking_account.to_account_info();
+    staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
+
+    // Remove all ephemeral multipliers
+    staking_account.ephemeral_multiplier = vec![];
+
+    // Set the data length to the initial space
+    staking_account.to_account_info().realloc(StakingData::INIT_SPACE, true)?;
+
+    // Reclaim rent
+    reclaim_rent(ctx)?;
+
+    Ok(())
+}
+
 /// Removes experience points from the staking account.
 pub fn remove_experience(ctx: Context<GodMode>, amount: u64) -> Result<()> {
     let staking_account = &mut ctx.accounts.staking_account;
 
     // Update current points
-    staking_account.update_points(Clock::get()?.unix_timestamp)?;
+    let account_info = staking_account.to_account_info();
+    staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
 
     // Remove experience
     staking_account.points = staking_account.points
@@ -100,41 +123,15 @@ pub fn reclaim_rent(ctx: Context<GodMode>) -> Result<()> {
     let staking_account = &mut ctx.accounts.staking_account;
 
     // Update current points
-    staking_account.update_points(Clock::get()?.unix_timestamp)?;
+    let account_info = staking_account.to_account_info();
+    staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
 
-    // Calculate the data length
-    let data_len = StakingData::INIT_SPACE
-        .checked_add(staking_account.ephemeral_multiplier.len().
-            checked_mul(EphemeralMultiplier::INIT_SPACE)
-            .ok_or(StakingError::Overflow)?
-        ).ok_or(StakingError::Overflow)?;
-    
+    let minimum_balance = Rent::get()?.minimum_balance(account_info.data_len());
+
     // Verify if the data_len is less than the current data_len, if so, resize the account
-    if data_len < staking_account.to_account_info().data_len() {
-        let new_minimum_balance = Rent::get()?.minimum_balance(data_len);
-
-        let bindings = ctx.accounts.user.key();
-        let seeds = [
-            STAKING_ACCOUNT_SEED.as_bytes(), 
-            bindings.as_ref(), 
-            &[staking_account.bump]
-        ];
-        let signer = &[&seeds[..]];
-        let lamports_diff = new_minimum_balance.saturating_sub(staking_account.to_account_info().lamports());
-
-        transfer(
-            CpiContext::new_with_signer(
-                ctx.accounts.system_program.to_account_info(),
-                Transfer {
-                    from:staking_account.to_account_info(),
-                    to: ctx.accounts.admin.to_account_info(),
-                },
-                signer,
-            ),
-            lamports_diff,
-        )?;
-
-        staking_account.to_account_info().realloc(data_len, true)?;
+    if account_info.lamports() > minimum_balance {
+        **ctx.accounts.admin.to_account_info().try_borrow_mut_lamports()? += account_info.lamports() - minimum_balance;
+        **account_info.try_borrow_mut_lamports()? = minimum_balance;
     }
 
     Ok(())
