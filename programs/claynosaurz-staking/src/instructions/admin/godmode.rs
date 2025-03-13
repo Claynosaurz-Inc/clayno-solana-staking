@@ -23,6 +23,10 @@ pub fn add_experience(ctx: Context<GodMode>, amount: u64) -> Result<()> {
 pub fn add_multiplier(ctx: Context<GodMode>, additional_multiplier: u16) -> Result<()> {
     let staking_account = &mut ctx.accounts.staking_account;
 
+    // Update current points
+    let account_info = staking_account.to_account_info();
+    staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
+
     staking_account.current_multiplier = staking_account.current_multiplier
         .checked_add(additional_multiplier)
         .ok_or(StakingError::Overflow)?;
@@ -32,6 +36,12 @@ pub fn add_multiplier(ctx: Context<GodMode>, additional_multiplier: u16) -> Resu
 
 /// Adds an ephemeral multiplier to the staking account and updates the data length if necessary.
 pub fn add_ephemeral_multiplier(ctx: Context<GodMode>, multiplier: u8, expiry_time: i64) -> Result<()> {
+    // Check if the multiplier is greater than 1
+    require!(multiplier > 1, StakingError::InvalidMultiplier);
+
+    // Check if the expiry time is greater than the current time
+    require!(expiry_time > Clock::get()?.unix_timestamp, StakingError::InvalidExpiryTime);
+
     let staking_account = &mut ctx.accounts.staking_account;
 
     // Update current points
@@ -50,22 +60,24 @@ pub fn add_ephemeral_multiplier(ctx: Context<GodMode>, multiplier: u8, expiry_ti
 
     // Verify if the data_len is greater than the current data_len, if so, resize the account
     if data_len > staking_account.to_account_info().data_len() {
+        staking_account.to_account_info().realloc(data_len, false)?;
+
         let new_minimum_balance = Rent::get()?.minimum_balance(data_len);
 
         let lamports_diff = new_minimum_balance.saturating_sub(staking_account.to_account_info().lamports());
 
-        transfer(
-            CpiContext::new(
-                ctx.accounts.system_program.to_account_info(),
-                Transfer {
-                    from: ctx.accounts.admin.to_account_info(),
-                    to: staking_account.to_account_info(),
-                },
-            ),
-            lamports_diff,
-        )?;
-
-        staking_account.to_account_info().realloc(data_len, false)?;
+        if lamports_diff > 0 {
+            transfer(
+                CpiContext::new(
+                    ctx.accounts.system_program.to_account_info(),
+                    Transfer {
+                        from: ctx.accounts.admin.to_account_info(),
+                        to: staking_account.to_account_info(),
+                    },
+                ),
+                lamports_diff,
+            )?;
+        }
     }
 
     Ok(())
@@ -111,6 +123,10 @@ pub fn remove_experience(ctx: Context<GodMode>, amount: u64) -> Result<()> {
 pub fn remove_multiplier(ctx: Context<GodMode>, multiplier: u16) -> Result<()> {
     let staking_account = &mut ctx.accounts.staking_account;
 
+    // Update current points
+    let account_info = staking_account.to_account_info();
+    staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
+
     staking_account.current_multiplier = staking_account.current_multiplier
         .checked_sub(multiplier)
         .ok_or(StakingError::Underflow)?;
@@ -122,9 +138,7 @@ pub fn remove_multiplier(ctx: Context<GodMode>, multiplier: u16) -> Result<()> {
 pub fn reclaim_rent(ctx: Context<GodMode>) -> Result<()> {
     let staking_account = &mut ctx.accounts.staking_account;
 
-    // Update current points
     let account_info = staking_account.to_account_info();
-    staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
 
     let minimum_balance = Rent::get()?.minimum_balance(account_info.data_len());
 
@@ -139,7 +153,7 @@ pub fn reclaim_rent(ctx: Context<GodMode>) -> Result<()> {
 
 #[derive(Accounts)]
 pub struct GodMode<'info> {
-    #[account(address = ADMIN_ADDRESS.parse::<Pubkey>().unwrap())]
+    #[account(mut, address = ADMIN_ADDRESS.parse::<Pubkey>().unwrap())]
     pub admin: Signer<'info>,
     /// CHECK: this is fine because it's a "godmode" state
     pub user: UncheckedAccount<'info>,

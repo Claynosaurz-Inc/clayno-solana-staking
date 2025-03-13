@@ -106,7 +106,7 @@ impl StakingData {
         
         // Realloc account to new size if needed
         if self.ephemeral_multiplier.len() > active_multipliers.len() {
-            let new_size = StakingData::INIT_SPACE + active_multipliers.len() * std::mem::size_of::<EphemeralMultiplier>();
+            let new_size = StakingData::INIT_SPACE + active_multipliers.len() * EphemeralMultiplier::INIT_SPACE;
             staking_account.realloc(new_size, true)?;
         }
         

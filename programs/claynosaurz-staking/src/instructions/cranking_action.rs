@@ -2,11 +2,14 @@ use anchor_lang::prelude::*;
 
 use crate::state::StakingData;
 use crate::errors::StakingError;
-use crate::constant::STAKING_ACCOUNT_SEED;
+use crate::constant::{STAKING_ACCOUNT_SEED, MAX_LEVEL};
 
 /// Increases the level of the staking account by 1 if the user has enough points.
 pub fn increase_level(ctx: Context<CrankingAction>) -> Result<()> {
     let staking_account = &mut ctx.accounts.staking_account;
+
+    // Check if the user doesn't already have the max level
+    require!(staking_account.current_level < MAX_LEVEL, StakingError::AlreadyAtMaximumLevel);
     
     // Check if the user has ever staked
     require_neq!(staking_account.last_claimed, 0, StakingError::NeverStaked);

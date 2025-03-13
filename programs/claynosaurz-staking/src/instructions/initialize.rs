@@ -18,11 +18,11 @@ pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
     };
 
     // Set the staking account's inner data to the newly created StakingData
-    ctx.accounts.staking_account.set_inner(staking_data.clone());
+    ctx.accounts.staking_account.set_inner(staking_data);
 
     // Emit an event indicating the creation of a new staking account
     emit!(StakingAccountCreated {
-        owner: staking_data.owner,
+        owner: ctx.accounts.staking_account.owner,
         timestamp: Clock::get()?.unix_timestamp,
     });
 

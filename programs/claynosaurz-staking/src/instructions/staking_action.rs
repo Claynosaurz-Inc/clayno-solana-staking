@@ -40,6 +40,9 @@ pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
         if collection.key.to_string() != CLAYNO_COLLECTION_ADDRESS {
             return Err(error!(StakingError::WrongCollection));
         }
+        if collection.verified != true {
+            return Err(error!(StakingError::UnverifiedCollection));
+        }
     } else {
         return Err(error!(StakingError::InvalidMetadata));
     };
