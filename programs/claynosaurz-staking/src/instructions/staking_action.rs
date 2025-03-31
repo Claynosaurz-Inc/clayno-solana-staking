@@ -7,7 +7,7 @@ use mpl_token_metadata::accounts::Metadata;
 
 use crate::state::{StakingData, Class};
 use crate::errors::StakingError;
-use crate::constant::{CLAYNO_COLLECTION_ADDRESS, AUTHORITY_SEED, STAKING_ACCOUNT_SEED, CLASS_PDA_SEED};
+use crate::constant::{AUTHORITY_SEED, CLASS_PDA_SEED, CLAYNO_COLLECTION_ADDRESS, SAGA_COLLECTION_ADDRESS, STAKING_ACCOUNT_SEED};
 use crate::events::StakingAccountUpdated;
 
 /// Stakes an NFT by delegating it to the global authority PDA.
@@ -37,7 +37,7 @@ pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
     // Deserialize Metadata to verify collection
     let nft_metadata = Metadata::safe_deserialize(&mut ctx.accounts.nft_metadata.to_account_info().data.borrow_mut()).unwrap();
     if let Some(collection) = nft_metadata.collection {
-        if collection.key.to_string() != CLAYNO_COLLECTION_ADDRESS {
+        if collection.key.to_string() != CLAYNO_COLLECTION_ADDRESS && collection.key.to_string() != SAGA_COLLECTION_ADDRESS {
             return Err(error!(StakingError::WrongCollection));
         }
         if collection.verified != true {

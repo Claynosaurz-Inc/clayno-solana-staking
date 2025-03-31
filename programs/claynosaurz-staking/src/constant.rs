@@ -8,7 +8,15 @@ pub const LEVEL_25_POINTS: u64 = 1_000_000_000;
 
 // Address Constants
 /// Address of the Clayno NFT collection.
+#[cfg(not(feature = "mainnet"))]
+pub const CLAYNO_COLLECTION_ADDRESS: &str = "33333333333333333333333333333333333333333333";
+#[cfg(feature = "mainnet")]
 pub const CLAYNO_COLLECTION_ADDRESS: &str = "6mszaj17KSfVqADrQj3o4W3zoLMTykgmV37W4QadCczK";
+/// Address of the Clayno NFT collection.
+#[cfg(not(feature = "mainnet"))]
+pub const SAGA_COLLECTION_ADDRESS: &str = "33333333333333333333333333333333333333333333";
+#[cfg(feature = "mainnet")]
+pub const SAGA_COLLECTION_ADDRESS: &str = "1yPMtWU5aqcF72RdyRD5yipmcMRC8NGNK59NvYubLkZ";
 /// Address of the admin account.
 pub const ADMIN_ADDRESS: &str = "33333333333333333333333333333333333333333333";
 
