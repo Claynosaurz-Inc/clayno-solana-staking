@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 
+use crate::events::{StakingAccountLevelUpdated, StakingAccountUpdated};
 use crate::state::StakingData;
 use crate::errors::StakingError;
 use crate::constant::{STAKING_ACCOUNT_SEED, MAX_LEVEL};
@@ -24,6 +25,14 @@ pub fn increase_level(ctx: Context<CrankingAction>) -> Result<()> {
     // Update the level
     staking_account.current_level = staking_account.current_level.checked_add(1).ok_or(StakingError::Overflow)?;
 
+    // Emit staking account update event
+    emit!(StakingAccountLevelUpdated {
+        owner: staking_account.owner,
+        points: staking_account.points,
+        level: staking_account.current_level,
+        timestamp: Clock::get()?.unix_timestamp,
+    });
+
     Ok(())
 }
 
@@ -37,6 +46,16 @@ pub fn claim(ctx: Context<CrankingAction>) -> Result<()> {
     // Update the points
     let account_info = staking_account.to_account_info();
     staking_account.update_points(Clock::get()?.unix_timestamp, &account_info)?;
+
+    // Emit staking account update event
+    emit!(StakingAccountUpdated {
+        owner: staking_account.owner,
+        points: staking_account.points,
+        current_multiplier: staking_account.current_multiplier,
+        ephemeral_multiplier: staking_account.ephemeral_multiplier.clone(),
+        last_claimed: staking_account.last_claimed,
+        timestamp: Clock::get()?.unix_timestamp,
+    });
 
     Ok(())
 }

@@ -89,6 +89,7 @@ pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
         owner: staking_account.owner,
         points: staking_account.points,
         current_multiplier: staking_account.current_multiplier,
+        ephemeral_multiplier: staking_account.ephemeral_multiplier.clone(),
         last_claimed: staking_account.last_claimed,
         timestamp: Clock::get()?.unix_timestamp,
     });
@@ -157,6 +158,7 @@ pub fn unstake(ctx: Context<StakingAction>) -> Result<()> {
         owner: staking_account.owner,
         points: staking_account.points,
         current_multiplier: staking_account.current_multiplier,
+        ephemeral_multiplier: staking_account.ephemeral_multiplier.clone(),
         last_claimed: staking_account.last_claimed,
         timestamp: Clock::get()?.unix_timestamp,
     });

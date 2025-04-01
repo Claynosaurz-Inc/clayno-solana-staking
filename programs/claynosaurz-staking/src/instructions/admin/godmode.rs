@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program::{Transfer, transfer};
 
+use crate::events::StakingAccountUpdated;
 use crate::state::{StakingData, EphemeralMultiplier};
 use crate::errors::StakingError;
 use crate::constant::{STAKING_ACCOUNT_SEED, ADMIN_ADDRESS};
@@ -16,6 +17,16 @@ pub fn add_experience(ctx: Context<GodMode>, amount: u64) -> Result<()> {
     // Add experience
     staking_account.points = staking_account.points.checked_add(amount).ok_or(StakingError::Overflow)?;
 
+    // Emit staking account update event
+    emit!(StakingAccountUpdated {
+        owner: staking_account.owner,
+        points: staking_account.points,
+        current_multiplier: staking_account.current_multiplier,
+        ephemeral_multiplier: staking_account.ephemeral_multiplier.clone(),
+        last_claimed: staking_account.last_claimed,
+        timestamp: Clock::get()?.unix_timestamp,
+    });
+
     Ok(())
 }
 
@@ -30,6 +41,16 @@ pub fn add_multiplier(ctx: Context<GodMode>, additional_multiplier: u16) -> Resu
     staking_account.current_multiplier = staking_account.current_multiplier
         .checked_add(additional_multiplier)
         .ok_or(StakingError::Overflow)?;
+
+    // Emit staking account update event
+    emit!(StakingAccountUpdated {
+        owner: staking_account.owner,
+        points: staking_account.points,
+        current_multiplier: staking_account.current_multiplier,
+        ephemeral_multiplier: staking_account.ephemeral_multiplier.clone(),
+        last_claimed: staking_account.last_claimed,
+        timestamp: Clock::get()?.unix_timestamp,
+    });
 
     Ok(())
 }
@@ -80,6 +101,16 @@ pub fn add_ephemeral_multiplier(ctx: Context<GodMode>, multiplier: u8, expiry_ti
         }
     }
 
+    // Emit staking account update event
+    emit!(StakingAccountUpdated {
+        owner: staking_account.owner,
+        points: staking_account.points,
+        current_multiplier: staking_account.current_multiplier,
+        ephemeral_multiplier: staking_account.ephemeral_multiplier.clone(),
+        last_claimed: staking_account.last_claimed,
+        timestamp: Clock::get()?.unix_timestamp,
+    });
+
     Ok(())
 }
 
@@ -93,6 +124,16 @@ pub fn remove_ephemeral_multiplier(ctx: Context<GodMode>) -> Result<()> {
 
     // Remove all ephemeral multipliers
     staking_account.ephemeral_multiplier = vec![];
+
+    // Emit staking account update event
+    emit!(StakingAccountUpdated {
+        owner: staking_account.owner,
+        points: staking_account.points,
+        current_multiplier: staking_account.current_multiplier,
+        ephemeral_multiplier: staking_account.ephemeral_multiplier.clone(),
+        last_claimed: staking_account.last_claimed,
+        timestamp: Clock::get()?.unix_timestamp,
+    });
 
     // Set the data length to the initial space
     staking_account.to_account_info().realloc(StakingData::INIT_SPACE, true)?;
@@ -116,6 +157,16 @@ pub fn remove_experience(ctx: Context<GodMode>, amount: u64) -> Result<()> {
         .checked_sub(amount)
         .ok_or(StakingError::Underflow)?;
 
+    // Emit staking account update event
+    emit!(StakingAccountUpdated {
+        owner: staking_account.owner,
+        points: staking_account.points,
+        current_multiplier: staking_account.current_multiplier,
+        ephemeral_multiplier: staking_account.ephemeral_multiplier.clone(),
+        last_claimed: staking_account.last_claimed,
+        timestamp: Clock::get()?.unix_timestamp,
+    });
+
     Ok(())
 }
 
@@ -130,6 +181,16 @@ pub fn remove_multiplier(ctx: Context<GodMode>, multiplier: u16) -> Result<()> {
     staking_account.current_multiplier = staking_account.current_multiplier
         .checked_sub(multiplier)
         .ok_or(StakingError::Underflow)?;
+
+    // Emit staking account update event
+    emit!(StakingAccountUpdated {
+        owner: staking_account.owner,
+        points: staking_account.points,
+        current_multiplier: staking_account.current_multiplier,
+        ephemeral_multiplier: staking_account.ephemeral_multiplier.clone(),
+        last_claimed: staking_account.last_claimed,
+        timestamp: Clock::get()?.unix_timestamp,
+    });
 
     Ok(())
 }

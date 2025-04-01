@@ -64,6 +64,7 @@ pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16) -> Result<()> {
                 owner: *owner.key,
                 points: staking_account_data.points,
                 current_multiplier: staking_account_data.current_multiplier,
+                ephemeral_multiplier: staking_account_data.ephemeral_multiplier.clone(),
                 last_claimed: staking_account_data.last_claimed,
                 timestamp: Clock::get()?.unix_timestamp,
             });
