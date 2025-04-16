@@ -28,6 +28,10 @@ pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
         staking_account.current_multiplier = staking_account.current_multiplier
             .checked_add(class.multiplier)
             .ok_or(StakingError::Overflow)?;
+
+        if class.locked > Clock::get()?.unix_timestamp {
+            return Err(error!(StakingError::AssetLocked));
+        }
     } else {
         staking_account.current_multiplier = staking_account.current_multiplier
             .checked_add(1)

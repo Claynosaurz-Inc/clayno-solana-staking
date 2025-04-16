@@ -35,12 +35,12 @@ pub mod clayno_staking {
     }
 
     // Admin Instructions
-    pub fn create_class(ctx: Context<CreateClass>, multiplier: u16) -> Result<()> {
-        instructions::admin::create_class(ctx, multiplier)
+    pub fn create_class(ctx: Context<CreateClass>, multiplier: u16, lock: bool) -> Result<()> {
+        instructions::admin::create_class(ctx, multiplier, lock)
     }
 
-    pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16) -> Result<()> {
-        instructions::admin::modify_class(ctx, multiplier)
+    pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16, lock: bool) -> Result<()> {
+        instructions::admin::modify_class(ctx, multiplier, lock)
     }
 
     pub fn add_experience(ctx: Context<GodMode>, amount: u64) -> Result<()> {

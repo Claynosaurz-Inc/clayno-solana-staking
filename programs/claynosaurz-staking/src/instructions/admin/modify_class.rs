@@ -6,11 +6,11 @@ use mpl_token_metadata::types::TokenState;
 
 use crate::errors::StakingError;
 use crate::state::{Class, StakingData};
-use crate::constant::{CLASS_PDA_SEED, AUTHORITY_SEED, ADMIN_ADDRESS}; 
+use crate::constant::{CLASS_PDA_SEED, AUTHORITY_SEED, ADMIN_ADDRESS, SECONDS_IN_YEAR}; 
 use crate::events::StakingAccountUpdated;
 
 /// Creates a new class PDA and initializes it with the necessary data.
-pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16) -> Result<()> {
+pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16, lock: bool) -> Result<()> {
     let class_pda = &mut ctx.accounts.class_pda;
     let previous_multiplier = class_pda.multiplier;
 
@@ -18,7 +18,10 @@ pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16) -> Result<()> {
     require_gte!(multiplier, 1, StakingError::InvalidMultiplier);
     
     // Populate the Class PDA with the multiplier
-    class_pda.set_inner(Class { multiplier });
+    class_pda.set_inner(Class { 
+        multiplier, 
+        locked: if lock { Clock::get()?.unix_timestamp + SECONDS_IN_YEAR } else { 0 } 
+    });
 
     // Check if the asset is staked and update staking data if necessary
     let record = TokenRecord::safe_deserialize(&mut ctx.accounts.token_mint_record.to_account_info().data.borrow_mut()).unwrap();

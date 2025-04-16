@@ -7,10 +7,11 @@ use crate::errors::StakingError;
 #[account]
 pub struct Class {
     pub multiplier: u16,
+    pub locked: i64,
 }
 
 impl Space for Class {
-    const INIT_SPACE: usize = 8 + 2;
+    const INIT_SPACE: usize = 8 + 2 + 8;
 }
 
 /// Represents a temporary multiplier with an expiry time.

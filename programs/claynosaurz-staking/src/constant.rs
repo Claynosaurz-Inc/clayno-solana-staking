@@ -5,6 +5,8 @@ pub const EXPERIENCE_FOR_SECOND: u64 = 32;
 pub const MAX_LEVEL: u8 = 25;
 /// Points required to reach level 25.
 pub const LEVEL_25_POINTS: u64 = 1_000_000_000;
+/// Number of seconds in a year.
+pub const SECONDS_IN_YEAR: i64 = 3600 * 24 * 365;
 
 // Address Constants
 /// Address of the Clayno NFT collection.
