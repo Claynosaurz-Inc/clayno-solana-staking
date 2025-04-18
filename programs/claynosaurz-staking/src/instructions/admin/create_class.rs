@@ -8,16 +8,24 @@ use crate::errors::StakingError;
 use crate::state::{Class, StakingData};
 use crate::constant::{ADMIN_ADDRESS, AUTHORITY_SEED, CLASS_PDA_SEED, SECONDS_IN_YEAR}; 
 use crate::events::StakingAccountUpdated;
+use crate::state::LockTime;
 
 /// Creates a new class PDA and initializes it with the necessary data.
-pub fn create_class(ctx: Context<CreateClass>, multiplier: u16, lock: bool) -> Result<()> {
+pub fn create_class(ctx: Context<CreateClass>, multiplier: u16, lock: u8) -> Result<()> {
     // Check if multiplier is greater than 1
     require_gte!(multiplier, 1, StakingError::InvalidMultiplier);
 
     // Populate the Class PDA with the multiplier
     ctx.accounts.class_pda.set_inner(Class { 
         multiplier, 
-        locked: if lock { Clock::get()?.unix_timestamp + SECONDS_IN_YEAR } else { 0 } 
+        lock_time: match lock {
+            0 => LockTime::None,
+            1 => LockTime::Short(Clock::get()?.unix_timestamp),
+            2 => LockTime::Medium(Clock::get()?.unix_timestamp),
+            3 => LockTime::Long(Clock::get()?.unix_timestamp),
+            4 => LockTime::Max(Clock::get()?.unix_timestamp),
+            _ => return Err(error!(StakingError::InvalidLockTime)),
+        }
     });
 
     // Check if the asset is staked and update staking data if necessary

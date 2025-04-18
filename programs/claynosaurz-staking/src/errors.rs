@@ -47,4 +47,6 @@ pub enum StakingError {
     // Class Related Errors
     #[msg("The multiplier needs to be greater than 1 (1x is the base multiplier already)")]
     InvalidMultiplier,
+    #[msg("The lock time is not valid")]
+    InvalidLockTime,
 }  

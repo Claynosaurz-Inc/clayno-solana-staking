@@ -5,8 +5,14 @@ pub const EXPERIENCE_FOR_SECOND: u64 = 32;
 pub const MAX_LEVEL: u8 = 25;
 /// Points required to reach level 25.
 pub const LEVEL_25_POINTS: u64 = 1_000_000_000;
-/// Number of seconds in a year.
-pub const SECONDS_IN_YEAR: i64 = 3600 * 24 * 365;
+/// Time for SHORT lockup.
+pub const SHORT_LOCKUP: i64 = 3600 * 24 * 30;
+/// Time for MEDIUM lockup.
+pub const MEDIUM_LOCKUP: i64 = 3600 * 24 * 90;
+/// Time for LONG lockup.
+pub const LONG_LOCKUP: i64 = 3600 * 24 * 180;
+/// Time for MAX lockup.
+pub const MAX_LOCKUP: i64 = 3600 * 24 * 360;
 
 // Address Constants
 /// Address of the Clayno NFT collection.

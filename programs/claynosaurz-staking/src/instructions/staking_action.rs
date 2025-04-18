@@ -5,9 +5,9 @@ use anchor_spl::token::{Token, TokenAccount, Mint};
 use mpl_token_metadata::instructions::{DelegateStakingV1CpiBuilder, LockV1CpiBuilder, RevokeStakingV1CpiBuilder, UnlockV1CpiBuilder};
 use mpl_token_metadata::accounts::Metadata;
 
-use crate::state::{StakingData, Class};
+use crate::state::{StakingData, Class, LockTime};
 use crate::errors::StakingError;
-use crate::constant::{AUTHORITY_SEED, CLASS_PDA_SEED, CLAYNO_COLLECTION_ADDRESS, SAGA_COLLECTION_ADDRESS, STAKING_ACCOUNT_SEED};
+use crate::constant::{AUTHORITY_SEED, CLASS_PDA_SEED, CLAYNO_COLLECTION_ADDRESS, SAGA_COLLECTION_ADDRESS, STAKING_ACCOUNT_SEED, SHORT_LOCKUP, MEDIUM_LOCKUP, LONG_LOCKUP, MAX_LOCKUP};
 use crate::events::StakingAccountUpdated;
 
 /// Stakes an NFT by delegating it to the global authority PDA.
@@ -29,8 +29,29 @@ pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
             .checked_add(class.multiplier)
             .ok_or(StakingError::Overflow)?;
 
-        if class.locked > Clock::get()?.unix_timestamp {
-            return Err(error!(StakingError::AssetLocked));
+        let current_time = Clock::get()?.unix_timestamp;
+        match class.lock_time {
+            LockTime::None => {},
+            LockTime::Short(lock_time) => {
+                if current_time < lock_time + SHORT_LOCKUP {
+                    return Err(error!(StakingError::AssetLocked));
+                }
+            },
+            LockTime::Medium(lock_time) => {
+                if current_time < lock_time + MEDIUM_LOCKUP {
+                    return Err(error!(StakingError::AssetLocked));
+                }
+            },
+            LockTime::Long(lock_time) => {
+                if current_time < lock_time + LONG_LOCKUP {
+                    return Err(error!(StakingError::AssetLocked));
+                }
+            },
+            LockTime::Max(lock_time) => {
+                if current_time < lock_time + MAX_LOCKUP {
+                    return Err(error!(StakingError::AssetLocked));
+                }
+            },
         }
     } else {
         staking_account.current_multiplier = staking_account.current_multiplier
@@ -115,6 +136,31 @@ pub fn unstake(ctx: Context<StakingAction>) -> Result<()> {
         staking_account.current_multiplier = staking_account.current_multiplier
             .checked_sub(class.multiplier)
             .ok_or(StakingError::Overflow)?;
+        
+        let current_time = Clock::get()?.unix_timestamp;
+        match class.lock_time {
+            LockTime::None => {},
+            LockTime::Short(lock_time) => {
+                if current_time < lock_time + SHORT_LOCKUP {
+                    return Err(error!(StakingError::AssetLocked));
+                }
+            },
+            LockTime::Medium(lock_time) => {
+                if current_time < lock_time + MEDIUM_LOCKUP {
+                    return Err(error!(StakingError::AssetLocked));
+                }
+            },
+            LockTime::Long(lock_time) => {
+                if current_time < lock_time + LONG_LOCKUP {
+                    return Err(error!(StakingError::AssetLocked));
+                }
+            },
+            LockTime::Max(lock_time) => {
+                if current_time < lock_time + MAX_LOCKUP {
+                    return Err(error!(StakingError::AssetLocked));
+                }
+            },
+        }
     } else {
         staking_account.current_multiplier = staking_account.current_multiplier
             .checked_sub(1)

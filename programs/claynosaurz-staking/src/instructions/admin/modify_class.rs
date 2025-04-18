@@ -5,12 +5,12 @@ use mpl_token_metadata::accounts::TokenRecord;
 use mpl_token_metadata::types::TokenState;
 
 use crate::errors::StakingError;
-use crate::state::{Class, StakingData};
+use crate::state::{Class, StakingData, LockTime};
 use crate::constant::{CLASS_PDA_SEED, AUTHORITY_SEED, ADMIN_ADDRESS, SECONDS_IN_YEAR}; 
 use crate::events::StakingAccountUpdated;
 
 /// Creates a new class PDA and initializes it with the necessary data.
-pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16, lock: bool) -> Result<()> {
+pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16, lock: u8) -> Result<()> {
     let class_pda = &mut ctx.accounts.class_pda;
     let previous_multiplier = class_pda.multiplier;
 
@@ -20,7 +20,13 @@ pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16, lock: bool) -> R
     // Populate the Class PDA with the multiplier
     class_pda.set_inner(Class { 
         multiplier, 
-        locked: if lock { Clock::get()?.unix_timestamp + SECONDS_IN_YEAR } else { 0 } 
+        locked: match lock {
+            0 => LockTime::None,
+            1 => LockTime::Short(Clock::get()?.unix_timestamp),
+            2 => LockTime::Medium(Clock::get()?.unix_timestamp),
+            3 => LockTime::Long(Clock::get()?.unix_timestamp),
+            4 => LockTime::Max(Clock::get()?.unix_timestamp),
+        }
     });
 
     // Check if the asset is staked and update staking data if necessary
