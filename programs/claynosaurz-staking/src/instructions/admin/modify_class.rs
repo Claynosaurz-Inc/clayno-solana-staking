@@ -6,8 +6,8 @@ use mpl_token_metadata::types::TokenState;
 
 use crate::errors::StakingError;
 use crate::state::{Class, StakingData, LockTime};
-use crate::constant::{CLASS_PDA_SEED, AUTHORITY_SEED, ADMIN_ADDRESS, SECONDS_IN_YEAR}; 
-use crate::events::StakingAccountUpdated;
+use crate::constant::{CLASS_PDA_SEED, AUTHORITY_SEED, ADMIN_ADDRESS}; 
+use crate::events::{StakingAccountUpdated, ClaynoUpdated};
 
 /// Creates a new class PDA and initializes it with the necessary data.
 pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16, lock: u8) -> Result<()> {
@@ -20,12 +20,13 @@ pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16, lock: u8) -> Res
     // Populate the Class PDA with the multiplier
     class_pda.set_inner(Class { 
         multiplier, 
-        locked: match lock {
+        lock_time: match lock {
             0 => LockTime::None,
             1 => LockTime::Short(Clock::get()?.unix_timestamp),
             2 => LockTime::Medium(Clock::get()?.unix_timestamp),
             3 => LockTime::Long(Clock::get()?.unix_timestamp),
             4 => LockTime::Max(Clock::get()?.unix_timestamp),
+            _ => return Err(error!(StakingError::InvalidLockTime)),
         }
     });
 
@@ -77,9 +78,25 @@ pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16, lock: u8) -> Res
                 last_claimed: staking_account_data.last_claimed,
                 timestamp: Clock::get()?.unix_timestamp,
             });
+
+            emit!(ClaynoUpdated {
+                clayno_id: ctx.accounts.token_mint.key(),
+                multiplier,
+                is_staked: true,
+                lock_time: ctx.accounts.class_pda.lock_time,
+                timestamp: Clock::get()?.unix_timestamp,
+            });
         } else {
             return Err(error!(StakingError::InvalidRemainingAccountSchema));
         }
+    } else {
+        emit!(ClaynoUpdated {
+            clayno_id: ctx.accounts.token_mint.key(),
+            multiplier,
+            is_staked: false,
+            lock_time: ctx.accounts.class_pda.lock_time,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
     };
 
     Ok(())

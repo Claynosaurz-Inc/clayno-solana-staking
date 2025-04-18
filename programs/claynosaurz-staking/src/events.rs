@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::state::EphemeralMultiplier;
+use crate::state::{EphemeralMultiplier, LockTime};
 
 #[event]
 pub struct StakingAccountCreated {
@@ -15,6 +15,15 @@ pub struct StakingAccountUpdated {
     pub current_multiplier: u16,
     pub ephemeral_multiplier: Vec<EphemeralMultiplier>,
     pub last_claimed: i64,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct ClaynoUpdated {
+    pub clayno_id: Pubkey,
+    pub multiplier: u16,
+    pub is_staked: bool,
+    pub lock_time: LockTime,
     pub timestamp: i64,
 }
 

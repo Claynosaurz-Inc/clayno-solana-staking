@@ -8,10 +8,10 @@ use mpl_token_metadata::accounts::Metadata;
 use crate::state::{StakingData, Class, LockTime};
 use crate::errors::StakingError;
 use crate::constant::{AUTHORITY_SEED, CLASS_PDA_SEED, CLAYNO_COLLECTION_ADDRESS, SAGA_COLLECTION_ADDRESS, STAKING_ACCOUNT_SEED, SHORT_LOCKUP, MEDIUM_LOCKUP, LONG_LOCKUP, MAX_LOCKUP};
-use crate::events::StakingAccountUpdated;
+use crate::events::{StakingAccountUpdated, ClaynoUpdated};
 
 /// Stakes an NFT by delegating it to the global authority PDA.
-pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
+pub fn stake(ctx: Context<StakingAction>, lock: u8) -> Result<()> {
     // Update staking data
     let staking_account = &mut ctx.accounts.staking_account;
 
@@ -23,40 +23,39 @@ pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
         staking_account.last_claimed = Clock::get()?.unix_timestamp;
     }
 
-    // Adjust multiplier based on class PDA ownership (default to 1 if no class PDA)
-    if let Ok(class) = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..]) {
+    // Handle lock period and class
+    if lock != 0 {
+        // If lock is specified, class must exist
+        let mut class = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..])
+            .map_err(|_| error!(StakingError::InvalidLockTime))?;
+
+        // Set the lock time based on the lock parameter
+        class.lock_time = match lock {
+            1 => LockTime::Short(Clock::get()?.unix_timestamp),
+            2 => LockTime::Medium(Clock::get()?.unix_timestamp),
+            3 => LockTime::Long(Clock::get()?.unix_timestamp),
+            4 => LockTime::Max(Clock::get()?.unix_timestamp),
+            _ => return Err(error!(StakingError::InvalidLockTime)),
+        };
+
+        // Serialize the updated class back to the account
+        class.try_serialize(&mut &mut ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..])?;
+
+        // Update staking account multiplier
         staking_account.current_multiplier = staking_account.current_multiplier
             .checked_add(class.multiplier)
             .ok_or(StakingError::Overflow)?;
-
-        let current_time = Clock::get()?.unix_timestamp;
-        match class.lock_time {
-            LockTime::None => {},
-            LockTime::Short(lock_time) => {
-                if current_time < lock_time + SHORT_LOCKUP {
-                    return Err(error!(StakingError::AssetLocked));
-                }
-            },
-            LockTime::Medium(lock_time) => {
-                if current_time < lock_time + MEDIUM_LOCKUP {
-                    return Err(error!(StakingError::AssetLocked));
-                }
-            },
-            LockTime::Long(lock_time) => {
-                if current_time < lock_time + LONG_LOCKUP {
-                    return Err(error!(StakingError::AssetLocked));
-                }
-            },
-            LockTime::Max(lock_time) => {
-                if current_time < lock_time + MAX_LOCKUP {
-                    return Err(error!(StakingError::AssetLocked));
-                }
-            },
-        }
     } else {
-        staking_account.current_multiplier = staking_account.current_multiplier
-            .checked_add(1)
-            .ok_or(StakingError::Overflow)?;
+        // If no lock specified, class is optional
+        if let Ok(class) = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..]) {
+            staking_account.current_multiplier = staking_account.current_multiplier
+                .checked_add(class.multiplier)
+                .ok_or(StakingError::Overflow)?;
+        } else {
+            staking_account.current_multiplier = staking_account.current_multiplier
+                .checked_add(1)
+                .ok_or(StakingError::Overflow)?;
+        }
     }
 
     // Deserialize Metadata to verify collection
@@ -118,6 +117,25 @@ pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
         last_claimed: staking_account.last_claimed,
         timestamp: Clock::get()?.unix_timestamp,
     });
+
+    // Emit clayno update event
+    if let Ok(class) = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..]) {
+        emit!(ClaynoUpdated {
+            clayno_id: ctx.accounts.nft.key(),
+            multiplier: class.multiplier,
+            is_staked: true,
+            lock_time: class.lock_time,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+    } else {
+        emit!(ClaynoUpdated {
+            clayno_id: ctx.accounts.nft.key(),
+            multiplier: 1,
+            is_staked: true,
+            lock_time: LockTime::None,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+    };
 
     Ok(())
 }
@@ -212,6 +230,25 @@ pub fn unstake(ctx: Context<StakingAction>) -> Result<()> {
         last_claimed: staking_account.last_claimed,
         timestamp: Clock::get()?.unix_timestamp,
     });
+
+    // Emit clayno update event
+    if let Ok(class) = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..]) {
+        emit!(ClaynoUpdated {
+            clayno_id: ctx.accounts.nft.key(),
+            multiplier: class.multiplier,
+            is_staked: true,
+            lock_time: class.lock_time,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+    } else {
+        emit!(ClaynoUpdated {
+            clayno_id: ctx.accounts.nft.key(),
+            multiplier: 1,
+            is_staked: true,
+            lock_time: LockTime::None,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+    };
 
     Ok(())
 }
