@@ -17,7 +17,7 @@ pub const MAX_LOCKUP: i64 = 3600 * 24 * 360;
 // Address Constants
 /// Address of the Clayno NFT collection.
 #[cfg(not(feature = "mainnet"))]
-pub const CLAYNO_COLLECTION_ADDRESS: &str = "7CsqodAmcXKPHpttxXJ7iDyrYr7EZt1o7yZUVfGcLtNb";
+pub const CLAYNO_COLLECTION_ADDRESS: &str = "CQQh6ujjzQSoBmTJPmqN3VUzSMSJXpGGxKtMkqfvJVLN";
 #[cfg(feature = "mainnet")]
 pub const CLAYNO_COLLECTION_ADDRESS: &str = "6mszaj17KSfVqADrQj3o4W3zoLMTykgmV37W4QadCczK";
 /// Address of the Clayno NFT collection.
@@ -27,7 +27,7 @@ pub const SAGA_COLLECTION_ADDRESS: &str = "3333333333333333333333333333333333333
 pub const SAGA_COLLECTION_ADDRESS: &str = "1yPMtWU5aqcF72RdyRD5yipmcMRC8NGNK59NvYubLkZ";
 /// Address of the admin account.
 #[cfg(not(feature = "mainnet"))]
-pub const ADMIN_ADDRESS: &str = "BAPw3n14PhrH5uyDymAN57qfKSogEYCayuF7r3NnTD33";
+pub const ADMIN_ADDRESS: &str = "43nqYdLNo6yzcLUNApzZ4tK6CnP8ucDmPvYMXuS6UfgN";
 #[cfg(feature = "mainnet")]
 pub const ADMIN_ADDRESS: &str = "33333333333333333333333333333333333333333333";
 

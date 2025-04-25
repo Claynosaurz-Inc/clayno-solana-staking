@@ -49,4 +49,6 @@ pub enum StakingError {
     InvalidMultiplier,
     #[msg("The lock time is not valid")]
     InvalidLockTime,
+    #[msg("The class was not found")]
+    ClassNotFound,
 }  

@@ -7,20 +7,11 @@ use crate::errors::StakingError;
 #[account]
 pub struct Class {
     pub multiplier: u16,
-    pub lock_time: LockTime,
+    pub lock_time: i64,
 }
 
 impl Space for Class {
-    const INIT_SPACE: usize = 8 + 2 + 1 + 8;
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, Debug)]
-pub enum LockTime {
-    None,
-    Short(i64),
-    Medium(i64),
-    Long(i64),
-    Max(i64),
+    const INIT_SPACE: usize = 8 + 2 + 8;
 }
 
 /// Represents a temporary multiplier with an expiry time.

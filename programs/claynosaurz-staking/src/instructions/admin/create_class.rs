@@ -8,7 +8,6 @@ use crate::errors::StakingError;
 use crate::state::{Class, StakingData};
 use crate::constant::{ADMIN_ADDRESS, AUTHORITY_SEED, CLASS_PDA_SEED}; 
 use crate::events::{StakingAccountUpdated, ClaynoUpdated};
-use crate::state::LockTime;
 
 /// Creates a new class PDA and initializes it with the necessary data.
 pub fn create_class(ctx: Context<CreateClass>, multiplier: u16) -> Result<()> {
@@ -18,7 +17,7 @@ pub fn create_class(ctx: Context<CreateClass>, multiplier: u16) -> Result<()> {
     // Populate the Class PDA with the multiplier
     ctx.accounts.class_pda.set_inner(Class { 
         multiplier, 
-        lock_time: LockTime::None,
+        lock_time: 0,
     });
 
     // Check if the asset is staked and update staking data if necessary
