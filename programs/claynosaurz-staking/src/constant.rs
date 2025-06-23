@@ -22,14 +22,15 @@ pub const CLAYNO_COLLECTION_ADDRESS: &str = "CQQh6ujjzQSoBmTJPmqN3VUzSMSJXpGGxKt
 pub const CLAYNO_COLLECTION_ADDRESS: &str = "6mszaj17KSfVqADrQj3o4W3zoLMTykgmV37W4QadCczK";
 /// Address of the Clayno NFT collection.
 #[cfg(not(feature = "mainnet"))]
-pub const SAGA_COLLECTION_ADDRESS: &str = "33333333333333333333333333333333333333333333";
+pub const SAGA_COLLECTION_ADDRESS: &str = "AFsQpg1wvMah361EYs6pecWWHvzcAa6TdezXeEhkGseU";
 #[cfg(feature = "mainnet")]
 pub const SAGA_COLLECTION_ADDRESS: &str = "1yPMtWU5aqcF72RdyRD5yipmcMRC8NGNK59NvYubLkZ";
 /// Address of the admin account.
 #[cfg(not(feature = "mainnet"))]
-pub const ADMIN_ADDRESS: &str = "43nqYdLNo6yzcLUNApzZ4tK6CnP8ucDmPvYMXuS6UfgN";
+pub const ADMIN_ADDRESS: &str = "CLAYripuPYnM4s3YEMxGxXTEKUb7C87mUnPuxoiSzX9H";
 #[cfg(feature = "mainnet")]
-pub const ADMIN_ADDRESS: &str = "33333333333333333333333333333333333333333333";
+pub const ADMIN_ADDRESS: &str = "CLAYripuPYnM4s3YEMxGxXTEKUb7C87mUnPuxoiSzX9H";
+
 
 // Seed Constants
 /// Seed for generating the authority PDA.
