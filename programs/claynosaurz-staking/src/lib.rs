@@ -8,7 +8,7 @@ mod events;
 mod constant;
 mod errors;
 
-declare_id!("77yQTzuBurgESy15XyQLjvEp2AKSk6vg4hcgviWafvbQ");
+declare_id!("CLAYrFKFaKo2JFed4HRVECG3Rb1iP3W44fcZmZmpWMH2");
 
 #[program]
 pub mod clayno_staking {
