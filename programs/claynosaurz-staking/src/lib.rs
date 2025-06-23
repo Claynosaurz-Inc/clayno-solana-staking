@@ -18,8 +18,8 @@ pub mod clayno_staking {
         instructions::initialize(ctx)
     }
 
-    pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
-        instructions::staking_action::stake(ctx)
+    pub fn stake(ctx: Context<StakingAction>, lock: u8) -> Result<()> {
+        instructions::staking_action::stake(ctx, lock)
     }
 
     pub fn unstake(ctx: Context<StakingAction>) -> Result<()> {
@@ -39,8 +39,8 @@ pub mod clayno_staking {
         instructions::admin::create_class(ctx, multiplier)
     }
 
-    pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16) -> Result<()> {
-        instructions::admin::modify_class(ctx, multiplier)
+    pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16, lock: u8) -> Result<()> {
+        instructions::admin::modify_class(ctx, multiplier, lock)
     }
 
     pub fn add_experience(ctx: Context<GodMode>, amount: u64) -> Result<()> {

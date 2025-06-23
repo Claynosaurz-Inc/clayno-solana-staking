@@ -7,13 +7,15 @@ use mpl_token_metadata::accounts::Metadata;
 
 use crate::state::{StakingData, Class};
 use crate::errors::StakingError;
-use crate::constant::{AUTHORITY_SEED, CLASS_PDA_SEED, CLAYNO_COLLECTION_ADDRESS, SAGA_COLLECTION_ADDRESS, STAKING_ACCOUNT_SEED};
-use crate::events::StakingAccountUpdated;
+use crate::constant::{AUTHORITY_SEED, CLASS_PDA_SEED, CLAYNO_COLLECTION_ADDRESS, SAGA_COLLECTION_ADDRESS, STAKING_ACCOUNT_SEED, SHORT_LOCKUP, MEDIUM_LOCKUP, LONG_LOCKUP, MAX_LOCKUP};
+use crate::events::{StakingAccountUpdated, ClaynoUpdated};
 
 /// Stakes an NFT by delegating it to the global authority PDA.
-pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
+pub fn stake(ctx: Context<StakingAction>, lock: u8) -> Result<()> {
     // Update staking data
     let staking_account = &mut ctx.accounts.staking_account;
+
+    msg!("Lock: {}", lock);
 
     // Update last claimed timestamp and points
     if staking_account.last_claimed != 0 {
@@ -23,15 +25,41 @@ pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
         staking_account.last_claimed = Clock::get()?.unix_timestamp;
     }
 
-    // Adjust multiplier based on class PDA ownership (default to 1 if no class PDA)
-    if let Ok(class) = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..]) {
+    // Handle lock period and class
+    if lock != 0 {
+        // If lock is specified, class must exist
+        let mut class = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..])
+            .map_err(|_| error!(StakingError::ClassNotFound))?;
+
+        // Set the lock time based on the lock parameter
+        class.lock_time = match lock {
+            1 => Clock::get()?.unix_timestamp + SHORT_LOCKUP,
+            2 => Clock::get()?.unix_timestamp + MEDIUM_LOCKUP,
+            3 => Clock::get()?.unix_timestamp + LONG_LOCKUP,
+            4 => Clock::get()?.unix_timestamp + MAX_LOCKUP,
+            _ => return Err(error!(StakingError::InvalidLockTime)),
+        };
+
+        // Serialize the updated class back to the account
+        class.try_serialize(&mut &mut ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..])?;
+
+        msg!("Class: {:?}", class.lock_time);
+
+        // Update staking account multiplier
         staking_account.current_multiplier = staking_account.current_multiplier
             .checked_add(class.multiplier)
             .ok_or(StakingError::Overflow)?;
     } else {
-        staking_account.current_multiplier = staking_account.current_multiplier
-            .checked_add(1)
-            .ok_or(StakingError::Overflow)?;
+        // If no lock specified, class is optional
+        if let Ok(class) = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..]) {
+            staking_account.current_multiplier = staking_account.current_multiplier
+                .checked_add(class.multiplier)
+                .ok_or(StakingError::Overflow)?;
+        } else {
+            staking_account.current_multiplier = staking_account.current_multiplier
+                .checked_add(1)
+                .ok_or(StakingError::Overflow)?;
+        }
     }
 
     // Deserialize Metadata to verify collection
@@ -94,6 +122,25 @@ pub fn stake(ctx: Context<StakingAction>) -> Result<()> {
         timestamp: Clock::get()?.unix_timestamp,
     });
 
+    // Emit clayno update event
+    if let Ok(class) = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..]) {
+        emit!(ClaynoUpdated {
+            clayno_id: ctx.accounts.nft.key(),
+            multiplier: class.multiplier,
+            is_staked: true,
+            lock_time: class.lock_time,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+    } else {
+        emit!(ClaynoUpdated {
+            clayno_id: ctx.accounts.nft.key(),
+            multiplier: 1,
+            is_staked: true,
+            lock_time: 0,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+    };
+
     Ok(())
 }
 
@@ -108,9 +155,21 @@ pub fn unstake(ctx: Context<StakingAction>) -> Result<()> {
 
     // Adjust multiplier based on class PDA ownership (default to 1 if no class PDA)
     if let Ok(class) = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..]) {
+        msg!("Class: {:?}", class.lock_time);
+        
         staking_account.current_multiplier = staking_account.current_multiplier
             .checked_sub(class.multiplier)
             .ok_or(StakingError::Overflow)?;
+        
+        let current_time = Clock::get()?.unix_timestamp;
+        match class.lock_time {
+            0 => {},
+            _ => {
+                if current_time < class.lock_time {
+                    return Err(error!(StakingError::AssetLocked));
+                }
+            }
+        }
     } else {
         staking_account.current_multiplier = staking_account.current_multiplier
             .checked_sub(1)
@@ -163,6 +222,25 @@ pub fn unstake(ctx: Context<StakingAction>) -> Result<()> {
         timestamp: Clock::get()?.unix_timestamp,
     });
 
+    // Emit clayno update event
+    if let Ok(class) = Class::try_deserialize(&mut &ctx.accounts.class_pda.to_account_info().data.borrow_mut()[..]) {
+        emit!(ClaynoUpdated {
+            clayno_id: ctx.accounts.nft.key(),
+            multiplier: class.multiplier,
+            is_staked: false,
+            lock_time: class.lock_time,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+    } else {
+        emit!(ClaynoUpdated {
+            clayno_id: ctx.accounts.nft.key(),
+            multiplier: 1,
+            is_staked: false,
+            lock_time: 0,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+    };
+
     Ok(())
 }
 
@@ -180,7 +258,7 @@ pub struct StakingAction<'info> {
     )]
     pub staking_account: Account<'info, StakingData>,
     /// CHECK: this will be deserialized later
-    #[account(seeds = [CLASS_PDA_SEED.as_bytes(), nft.key().as_ref()], bump)]
+    #[account(mut, seeds = [CLASS_PDA_SEED.as_bytes(), nft.key().as_ref()], bump)]
     pub class_pda: UncheckedAccount<'info>,
 
     /// NFT Accounts

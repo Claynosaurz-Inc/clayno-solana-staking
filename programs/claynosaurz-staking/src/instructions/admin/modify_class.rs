@@ -6,19 +6,28 @@ use mpl_token_metadata::types::TokenState;
 
 use crate::errors::StakingError;
 use crate::state::{Class, StakingData};
-use crate::constant::{CLASS_PDA_SEED, AUTHORITY_SEED, ADMIN_ADDRESS}; 
-use crate::events::StakingAccountUpdated;
+use crate::constant::{ADMIN_ADDRESS, AUTHORITY_SEED, CLASS_PDA_SEED, SHORT_LOCKUP, MEDIUM_LOCKUP, LONG_LOCKUP, MAX_LOCKUP}; 
+use crate::events::{StakingAccountUpdated, ClaynoUpdated};
 
 /// Creates a new class PDA and initializes it with the necessary data.
-pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16) -> Result<()> {
+pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16, lock: u8) -> Result<()> {
     let class_pda = &mut ctx.accounts.class_pda;
     let previous_multiplier = class_pda.multiplier;
 
-    require_neq!(multiplier, previous_multiplier, StakingError::InvalidMultiplier);
-    require_gte!(multiplier, 1, StakingError::InvalidMultiplier);
+    require_gte!(multiplier, 0, StakingError::InvalidMultiplier);
     
     // Populate the Class PDA with the multiplier
-    class_pda.set_inner(Class { multiplier });
+    class_pda.set_inner(Class { 
+        multiplier, 
+        lock_time: match lock {
+            0 => 0,
+            1 => Clock::get()?.unix_timestamp + SHORT_LOCKUP,
+            2 => Clock::get()?.unix_timestamp + MEDIUM_LOCKUP,
+            3 => Clock::get()?.unix_timestamp + LONG_LOCKUP,
+            4 => Clock::get()?.unix_timestamp + MAX_LOCKUP,
+            _ => return Err(error!(StakingError::InvalidLockTime)),
+        }
+    });
 
     // Check if the asset is staked and update staking data if necessary
     let record = TokenRecord::safe_deserialize(&mut ctx.accounts.token_mint_record.to_account_info().data.borrow_mut()).unwrap();
@@ -68,9 +77,25 @@ pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16) -> Result<()> {
                 last_claimed: staking_account_data.last_claimed,
                 timestamp: Clock::get()?.unix_timestamp,
             });
+
+            emit!(ClaynoUpdated {
+                clayno_id: ctx.accounts.token_mint.key(),
+                multiplier,
+                is_staked: true,
+                lock_time: ctx.accounts.class_pda.lock_time,
+                timestamp: Clock::get()?.unix_timestamp,
+            });
         } else {
             return Err(error!(StakingError::InvalidRemainingAccountSchema));
         }
+    } else {
+        emit!(ClaynoUpdated {
+            clayno_id: ctx.accounts.token_mint.key(),
+            multiplier,
+            is_staked: false,
+            lock_time: ctx.accounts.class_pda.lock_time,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
     };
 
     Ok(())

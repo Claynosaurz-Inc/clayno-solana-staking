@@ -6,16 +6,19 @@ use mpl_token_metadata::types::TokenState;
 
 use crate::errors::StakingError;
 use crate::state::{Class, StakingData};
-use crate::constant::{CLASS_PDA_SEED, AUTHORITY_SEED, ADMIN_ADDRESS}; 
-use crate::events::StakingAccountUpdated;
+use crate::constant::{ADMIN_ADDRESS, AUTHORITY_SEED, CLASS_PDA_SEED}; 
+use crate::events::{StakingAccountUpdated, ClaynoUpdated};
 
 /// Creates a new class PDA and initializes it with the necessary data.
 pub fn create_class(ctx: Context<CreateClass>, multiplier: u16) -> Result<()> {
-    // Check if multiplier is greater than 0
+    // Check if multiplier is greater than 1
     require_gte!(multiplier, 1, StakingError::InvalidMultiplier);
 
     // Populate the Class PDA with the multiplier
-    ctx.accounts.class_pda.set_inner(Class { multiplier });
+    ctx.accounts.class_pda.set_inner(Class { 
+        multiplier, 
+        lock_time: 0,
+    });
 
     // Check if the asset is staked and update staking data if necessary
     let record = TokenRecord::safe_deserialize(&mut ctx.accounts.token_mint_record.to_account_info().data.borrow_mut()).unwrap();
@@ -58,9 +61,25 @@ pub fn create_class(ctx: Context<CreateClass>, multiplier: u16) -> Result<()> {
                 last_claimed: staking_account_data.last_claimed,
                 timestamp: Clock::get()?.unix_timestamp,
             });
+
+            emit!(ClaynoUpdated {
+                clayno_id: ctx.accounts.token_mint.key(),
+                multiplier,
+                is_staked: true,
+                lock_time: ctx.accounts.class_pda.lock_time,
+                timestamp: Clock::get()?.unix_timestamp,
+            });
         } else {
             return Err(error!(StakingError::InvalidRemainingAccountSchema));
         }
+    } else {
+        emit!(ClaynoUpdated {
+            clayno_id: ctx.accounts.token_mint.key(),
+            multiplier,
+            is_staked: false,
+            lock_time: ctx.accounts.class_pda.lock_time,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
     };
 
     Ok(())

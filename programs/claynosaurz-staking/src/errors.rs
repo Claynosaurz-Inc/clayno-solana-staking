@@ -41,8 +41,14 @@ pub enum StakingError {
     WrongAuthority,
     #[msg("The expiry time is not greater than the current time")]
     InvalidExpiryTime,
+    #[msg("The asset is locked")]
+    AssetLocked,
 
     // Class Related Errors
     #[msg("The multiplier needs to be greater than 1 (1x is the base multiplier already)")]
     InvalidMultiplier,
+    #[msg("The lock time is not valid")]
+    InvalidLockTime,
+    #[msg("The class was not found")]
+    ClassNotFound,
 }  
