@@ -13,6 +13,8 @@ pub const MEDIUM_LOCKUP: i64 = 3600 * 24 * 90;
 pub const LONG_LOCKUP: i64 = 3600 * 24 * 180;
 /// Time for MAX lockup.
 pub const MAX_LOCKUP: i64 = 3600 * 24 * 360;
+/// Time for TEST lockup.
+pub const TEST_LOCKUP: i64 = 300; // 5 minutes in seconds
 
 // Address Constants
 /// Address of the Clayno NFT collection.
@@ -39,4 +41,3 @@ pub const AUTHORITY_SEED: &str = "auth";
 pub const STAKING_ACCOUNT_SEED: &str = "staking";
 /// Seed for generating the class PDA.
 pub const CLASS_PDA_SEED: &str = "class";
-

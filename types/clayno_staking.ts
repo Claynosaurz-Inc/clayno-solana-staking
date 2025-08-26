@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/clayno_staking.json`.
  */
 export type ClaynoStaking = {
-  "address": "77yQTzuBurgESy15XyQLjvEp2AKSk6vg4hcgviWafvbQ",
+  "address": "CLAYrFKFaKo2JFed4HRVECG3Rb1iP3W44fcZmZmpWMH2",
   "metadata": {
     "name": "claynoStaking",
     "version": "0.1.0",
@@ -1008,6 +1008,19 @@ export type ClaynoStaking = {
         106,
         109
       ]
+    },
+    {
+      "name": "claynoUpdated",
+      "discriminator": [
+        228,
+        51,
+        228,
+        201,
+        107,
+        217,
+        53,
+        36
+      ]
     }
   ],
   "errors": [
@@ -1206,6 +1219,34 @@ export type ClaynoStaking = {
           },
           {
             "name": "lastClaimed",
+            "type": "i64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "claynoUpdated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "claynoId",
+            "type": "pubkey"
+          },
+          {
+            "name": "multiplier",
+            "type": "u16"
+          },
+          {
+            "name": "isStaked",
+            "type": "bool"
+          },
+          {
+            "name": "lockTime",
             "type": "i64"
           },
           {

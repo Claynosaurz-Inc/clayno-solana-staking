@@ -5,10 +5,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-claynosaurz_staking = "CLAYrFKFaKo2JFed4HRVECG3Rb1iP3W44fcZmZmpWMH2"
+claynosaurz_staking = "CLAYVLFC58dsDXcYTy4vD6uK4Gu6xy6UNhUHkXsBkRfu"
 
 [programs.devnet]
-claynosaurz_staking = "CLAYrFKFaKo2JFed4HRVECG3Rb1iP3W44fcZmZmpWMH2"
+claynosaurz_staking = "CLAYVLFC58dsDXcYTy4vD6uK4Gu6xy6UNhUHkXsBkRfu"
 
 [registry]
 url = "https://api.apr.dev"
