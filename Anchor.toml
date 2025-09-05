@@ -17,7 +17,7 @@ claynosaurz_staking = "CLAYVLFC58dsDXcYTy4vD6uK4Gu6xy6UNhUHkXsBkRfu"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "mainnet"
 wallet = "~/.config/solana/staking-ua.json"
 
 [scripts]
