@@ -509,6 +509,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "mpl-token-metadata",
+ "solana-security-txt",
 ]
 
 [[package]]
