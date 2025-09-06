@@ -67,11 +67,10 @@ We take security seriously and appreciate responsible disclosure of potential vu
 ### How to Report
 
 **Primary Contact:**
-- **Email**: security@claynosaurz.com
-- **GitHub Security Advisory**: [Create Advisory](https://github.com/Claynosaurz-Inc/staking-smart-contract/security/advisories/new)
+- **Email**: jletesson@claynosaurz.com
 
 **Alternative Contacts:**
-- **Discord**: Contact our team in the [Claynosaurz Discord](https://discord.gg/claynosaurz)
+- **Discord**: Contact our team in the [Claynosaurz Discord](https://discord.com/channels/978415351014510634/978418443894259772)
 - **Twitter**: [@Claynosaurz](https://twitter.com/claynosaurz)
 
 ### What to Include in Your Report
@@ -178,13 +177,13 @@ We commit to:
 
 ## Contact Information
 
-### Security Team
-- **Primary**: security@claynosaurz.com
+### Claynosaurz Team
+- **Primary**: jletesson@claynosaurz.com
 - **Response Time**: 24-48 hours
 
 ### Development Team
 - **GitHub**: [Claynosaurz-Inc](https://github.com/Claynosaurz-Inc)
-- **Issues**: [Report Issues](https://github.com/Claynosaurz-Inc/staking-smart-contract/issues)
+- **Issues**: [Report Issues](https://github.com/Claynosaurz-Inc/clayno-solana-staking/issues)
 
 ### Community
 - **Discord**: [Join our community](https://discord.gg/claynosaurz)
@@ -207,7 +206,7 @@ We thank the following security researchers and organizations:
 
 This security policy is regularly reviewed and updated. Last updated: February 2025.
 
-For the most current version, please check: [https://github.com/Claynosaurz-Inc/staking-smart-contract/blob/main/SECURITY.md](https://github.com/Claynosaurz-Inc/staking-smart-contract/blob/main/SECURITY.md)
+For the most current version, please check: [https://github.com/Claynosaurz-Inc/clayno-solana-staking/blob/main/SECURITY.md](https://github.com/Claynosaurz-Inc/clayno-solana-staking/blob/main/SECURITY.md)
 
 ---
 
