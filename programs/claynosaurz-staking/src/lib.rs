@@ -10,6 +10,22 @@ mod errors;
 
 declare_id!("CLAYVLFC58dsDXcYTy4vD6uK4Gu6xy6UNhUHkXsBkRfu");
 
+#[cfg(not(feature = "no-entrypoint"))]
+use solana_security_txt::security_txt;
+
+#[cfg(not(feature = "no-entrypoint"))]
+security_txt! {
+    name: "Claynosaurz Staking",
+    project_url: "https://claynosaurz.com",
+    contacts: "email:jletesson@claynosaurz.com,link:https://discord.com/channels/978415351014510634/978418443894259772",
+    policy: "https://github.com/Claynosaurz-Inc/clayno-solana-staking/blob/main/SECURITY.md",
+    preferred_languages: "en",
+    source_code: "https://github.com/Claynosaurz-Inc/clayno-solana-staking",
+    source_revision: "CLAYVLFC58dsDXcYTy4vD6uK4Gu6xy6UNhUHkXsBkRfu",
+    auditors: "Program ID: CLAYVLFC58dsDXcYTy4vD6uK4Gu6xy6UNhUHkXsBkRfu",
+    acknowledgements: "Audited by OtterSec. Thank you to our bug bounty hunters!"
+}
+
 #[program]
 pub mod clayno_staking {
     use super::*;
