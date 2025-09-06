@@ -19,6 +19,7 @@ pub struct StakingAccountUpdated {
 }
 
 #[event]
+#[derive(Debug)]
 pub struct ClaynoUpdated {
     pub clayno_id: Pubkey,
     pub multiplier: u16,

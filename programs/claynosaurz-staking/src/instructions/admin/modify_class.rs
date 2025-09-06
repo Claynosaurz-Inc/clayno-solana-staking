@@ -6,7 +6,7 @@ use mpl_token_metadata::types::TokenState;
 
 use crate::errors::StakingError;
 use crate::state::{Class, StakingData};
-use crate::constant::{ADMIN_ADDRESS, AUTHORITY_SEED, CLASS_PDA_SEED, SHORT_LOCKUP, MEDIUM_LOCKUP, LONG_LOCKUP, MAX_LOCKUP}; 
+use crate::constant::{ADMIN_ADDRESS, AUTHORITY_SEED, CLASS_PDA_SEED, SHORT_LOCKUP, MEDIUM_LOCKUP, LONG_LOCKUP, MAX_LOCKUP, TEST_LOCKUP}; 
 use crate::events::{StakingAccountUpdated, ClaynoUpdated};
 
 /// Creates a new class PDA and initializes it with the necessary data.
@@ -25,6 +25,7 @@ pub fn modify_class(ctx: Context<ModifyClass>, multiplier: u16, lock: u8) -> Res
             2 => Clock::get()?.unix_timestamp + MEDIUM_LOCKUP,
             3 => Clock::get()?.unix_timestamp + LONG_LOCKUP,
             4 => Clock::get()?.unix_timestamp + MAX_LOCKUP,
+            5 => Clock::get()?.unix_timestamp + TEST_LOCKUP,
             _ => return Err(error!(StakingError::InvalidLockTime)),
         }
     });

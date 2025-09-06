@@ -7,7 +7,7 @@ use mpl_token_metadata::accounts::Metadata;
 
 use crate::state::{StakingData, Class};
 use crate::errors::StakingError;
-use crate::constant::{AUTHORITY_SEED, CLASS_PDA_SEED, CLAYNO_COLLECTION_ADDRESS, SAGA_COLLECTION_ADDRESS, STAKING_ACCOUNT_SEED, SHORT_LOCKUP, MEDIUM_LOCKUP, LONG_LOCKUP, MAX_LOCKUP};
+use crate::constant::{AUTHORITY_SEED, CLASS_PDA_SEED, CLAYNO_COLLECTION_ADDRESS, SAGA_COLLECTION_ADDRESS, STAKING_ACCOUNT_SEED, SHORT_LOCKUP, MEDIUM_LOCKUP, LONG_LOCKUP, MAX_LOCKUP, TEST_LOCKUP};
 use crate::events::{StakingAccountUpdated, ClaynoUpdated};
 
 /// Stakes an NFT by delegating it to the global authority PDA.
@@ -37,6 +37,7 @@ pub fn stake(ctx: Context<StakingAction>, lock: u8) -> Result<()> {
             2 => Clock::get()?.unix_timestamp + MEDIUM_LOCKUP,
             3 => Clock::get()?.unix_timestamp + LONG_LOCKUP,
             4 => Clock::get()?.unix_timestamp + MAX_LOCKUP,
+            5 => Clock::get()?.unix_timestamp + TEST_LOCKUP,
             _ => return Err(error!(StakingError::InvalidLockTime)),
         };
 
@@ -131,8 +132,22 @@ pub fn stake(ctx: Context<StakingAction>, lock: u8) -> Result<()> {
             lock_time: class.lock_time,
             timestamp: Clock::get()?.unix_timestamp,
         });
+        msg!("Emitting ClaynoUpdated: {:?}", ClaynoUpdated {
+            clayno_id: ctx.accounts.nft.key(),
+            multiplier: class.multiplier,
+            is_staked: true,
+            lock_time: class.lock_time,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
     } else {
         emit!(ClaynoUpdated {
+            clayno_id: ctx.accounts.nft.key(),
+            multiplier: 1,
+            is_staked: true,
+            lock_time: 0,
+            timestamp: Clock::get()?.unix_timestamp,
+        });
+        msg!("Emitting ClaynoUpdated: {:?}", ClaynoUpdated {
             clayno_id: ctx.accounts.nft.key(),
             multiplier: 1,
             is_staked: true,
