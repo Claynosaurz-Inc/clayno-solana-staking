@@ -1,6 +1,6 @@
 [package]
 name = "claynosaurz-staking"
-version = "1.0.0"
+version = "1.0.1"
 description = "Claynosaurz Staking System"
 edition = "2021"
 
@@ -9,7 +9,8 @@ crate-type = ["cdylib", "lib"]
 name = "claynosaurz_staking"
 
 [features]
-default = []
+default = ["mainnet"]
+mainnet = []
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
